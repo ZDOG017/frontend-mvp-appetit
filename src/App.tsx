@@ -3,6 +3,7 @@ import Header from './components/Header'
 import NavigationMenu from './components/NavigationMenu'
 import PromoBanners from './components/PromoBanners'
 import PopularItems from './components/PopularItems'
+import ProductCatalog from './components/ProductCatalog'
 
 const App: React.FC = () => {
   return (
@@ -11,6 +12,7 @@ const App: React.FC = () => {
       <NavigationMenu />
       <PromoBanners />
       <PopularItems />
+      <ProductCatalog />
     </div>
   )
 }

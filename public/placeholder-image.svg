@@ -1,0 +1,7 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#F9FAFB"/>
+  <circle cx="100" cy="80" r="25" fill="#E5E7EB"/>
+  <path d="M60 120h80v60H60z" fill="#E5E7EB"/>
+  <path d="M80 140h40v20H80z" fill="#D1D5DB"/>
+  <text x="100" y="195" text-anchor="middle" fill="#9CA3AF" font-family="Arial, sans-serif" font-size="12">APPETIT</text>
+</svg>
