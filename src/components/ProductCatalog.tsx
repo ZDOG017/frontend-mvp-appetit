@@ -19,8 +19,21 @@ const ProductCatalog: React.FC = () => {
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Перебираем все секции (категории) */}
-      {appfoodData.sections.map((section) => (
-        <div key={section.id} className="mb-12">
+      {appfoodData.sections.map((section) => {
+        // Соответствие названий секций из JSON к ID для навигации
+        const getSectionId = (title: string) => {
+          const mapping: { [key: string]: string } = {
+            'Комбо': 'promos',
+            'Блюда': 'dishes', 
+            'Закуски': 'snacks',
+            'Соусы': 'sauces',
+            'Напитки': 'drinks'
+          };
+          return mapping[title] || title.toLowerCase();
+        };
+
+        return (
+        <div key={section.id} id={getSectionId(section.title)} className="mb-12 scroll-mt-24">
           {/* Заголовок категории */}
           <div className="flex items-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -99,7 +112,8 @@ const ProductCatalog: React.FC = () => {
             ))}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
