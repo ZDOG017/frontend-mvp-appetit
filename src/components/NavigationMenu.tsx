@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import miniLogo from '../assets/mini_logo.svg';
+import { useCart } from '../context/CartContext';
 
 const NavigationMenu: React.FC = () => {
   const [isSticky, setIsSticky] = useState(false);
@@ -9,14 +10,15 @@ const NavigationMenu: React.FC = () => {
   const navRef = useRef<HTMLDivElement>(null);
   const originalOffsetTop = useRef<number>(0);
   const animationRef = useRef<number | undefined>(undefined);
+  const { totalItems, totalPrice, openCart } = useCart();
 
-  const menuItems = [
+  const menuItems = useMemo(() => [
     { name: 'Акции', id: 'promos' },
     { name: 'Блюда', id: 'dishes' },
     { name: 'Закуски', id: 'snacks' },
     { name: 'Соусы', id: 'sauces' },
     { name: 'Напитки', id: 'drinks' }
-  ];
+  ], []);
 
   useEffect(() => {
     // Сохраняем изначальную позицию навигации
@@ -108,7 +110,7 @@ const NavigationMenu: React.FC = () => {
     handleScroll(); // Вызываем сразу для корректной инициализации
     
     return () => window.removeEventListener('scroll', throttledHandleScroll);
-  }, [activeSection]);
+  }, [activeSection, menuItems]);
 
   // Плавная анимация progress bar
   useEffect(() => {
@@ -207,17 +209,44 @@ const NavigationMenu: React.FC = () => {
             ))}
           </nav>
 
-          {/* Animated Cart Button */}
-          <button className={`relative bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-full font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 group overflow-hidden ${
-            isSticky ? 'text-sm' : 'text-base px-8 py-3'
-          }`}>
-            <span className="relative z-10">Корзина</span>
+          {/* Enhanced Cart Button */}
+          <button 
+            onClick={openCart}
+            className={`relative bg-red-500 hover:bg-red-600 text-white rounded-full font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 group overflow-hidden ${
+              isSticky ? 'text-sm px-4 py-2' : 'text-base px-6 py-3'
+            }`}
+          >
+            <div className="relative z-10 flex items-center space-x-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l1.5-6M20 13v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6" />
+              </svg>
+              <span>Корзина</span>
+              
+              {/* Счетчик товаров */}
+              {totalItems > 0 && (
+                <span className="bg-white text-red-500 px-2 py-0.5 rounded-full text-xs font-bold min-w-[20px] h-5 flex items-center justify-center animate-pulse">
+                  {totalItems}
+                </span>
+              )}
+              
+              {/* Показать сумму если есть товары */}
+              {totalPrice > 0 && !isSticky && (
+                <span className="bg-red-400 px-2 py-1 rounded-lg text-sm">
+                  {totalPrice} ₸
+                </span>
+              )}
+            </div>
             
             {/* Анимированный фон */}
             <span className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
             
             {/* Эффект пульсации */}
             <span className="absolute inset-0 bg-red-400 rounded-full scale-0 group-hover:scale-110 transition-transform duration-500 opacity-30"></span>
+            
+            {/* Пульсация при наличии товаров */}
+            {totalItems > 0 && (
+              <span className="absolute inset-0 bg-red-300 rounded-full animate-ping opacity-20"></span>
+            )}
           </button>
         </div>
 

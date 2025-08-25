@@ -1,7 +1,10 @@
 import React from 'react';
 import appfoodData from '../data/appfood_data.json';
+import { useCart } from '../context/CartContext';
 
 const ProductCatalog: React.FC = () => {
+  const { addItem } = useCart();
+
   // Функция для форматирования цены
   const formatPrice = (price: number) => {
     return `${price} ₸`;
@@ -103,8 +106,24 @@ const ProductCatalog: React.FC = () => {
                     <span className="text-lg font-bold text-gray-900">
                       {product.price.is_range ? 'от ' : ''}{formatPrice(product.price.price)}
                     </span>
-                    <button className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full text-sm transition-colors">
-                      Выбрать
+                    <button 
+                      onClick={() => addItem({
+                        id: `${section.title}-${product.id || Math.random()}`,
+                        name: product.name,
+                        price: product.price.price,
+                        description: product.description,
+                        category: section.title,
+                        image: getProductImage(product)
+                      })}
+                      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl group"
+                    >
+                      <span className="group-hover:hidden">Выбрать</span>
+                      <span className="hidden group-hover:inline-flex items-center space-x-1">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span>В корзину</span>
+                      </span>
                     </button>
                   </div>
                 </div>
