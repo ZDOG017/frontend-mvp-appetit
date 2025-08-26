@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useToast } from './ToastContext';
 
 export type AuthUser = {
   id: string;
@@ -43,6 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   useEffect(() => {
     try {
@@ -53,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       /* ignore storage errors */
     }
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     try {
@@ -94,7 +96,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // API не возвращает профиль, сохраняем базу из email
     setUser({ id: 'self', username: email, email });
     setIsAuthOpen(false);
-  }, []);
+    showToast({ title: 'Вы вошли в аккаунт', description: 'Добро пожаловать!', type: 'success' });
+  }, [showToast]);
 
   const register = useCallback(async ({ firstName, lastName, email, password, password2 }: RegisterPayload) => {
     if (!firstName || !lastName || !email || !password || !password2) {
@@ -122,12 +125,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const u: { id: number; email: string; first_name: string; last_name: string } = await res.json();
     setUser({ id: String(u.id), username: u.email, email: u.email, firstName: u.first_name, lastName: u.last_name });
     setIsAuthOpen(false);
-  }, []);
+    showToast({ title: 'Регистрация успешна', description: 'Вы вошли в аккаунт', type: 'success' });
+  }, [showToast]);
 
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
-  }, []);
+    showToast({ title: 'Вы вышли из аккаунта', type: 'info' });
+  }, [showToast]);
 
   const value = useMemo(() => ({ user, token, isAuthOpen, openAuth, closeAuth, login, register, logout }), [user, token, isAuthOpen, openAuth, closeAuth, login, register, logout]);
 
