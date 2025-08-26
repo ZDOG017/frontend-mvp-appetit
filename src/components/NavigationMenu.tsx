@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import miniLogo from '../assets/mini_logo.svg';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 const NavigationMenu: React.FC = () => {
   const [isSticky, setIsSticky] = useState(false);
@@ -11,6 +12,7 @@ const NavigationMenu: React.FC = () => {
   const originalOffsetTop = useRef<number>(0);
   const animationRef = useRef<number | undefined>(undefined);
   const { totalItems, totalPrice, openCart } = useCart();
+  const { user, openAuth, logout } = useAuth();
 
   const menuItems = useMemo(() => [
     { name: 'Акции', id: 'promos' },
@@ -159,7 +161,7 @@ const NavigationMenu: React.FC = () => {
       <div 
         ref={navRef}
         id="navigation-menu"
-        className={`w-full transition-all duration-500 ease-in-out z-50 ${
+        className={`w-full transition-all duration-500 ease-in-out z-40 ${
           isSticky 
             ? 'fixed top-0 left-0 right-0 bg-gradient-to-r from-white/95 via-white/90 to-white/95 backdrop-blur-md shadow-lg border-b border-white/20' 
             : 'relative bg-transparent'
@@ -209,6 +211,19 @@ const NavigationMenu: React.FC = () => {
             ))}
           </nav>
 
+          {/* Auth / User and Cart */}
+          <div className="flex items-center space-x-3">
+            {isSticky && (
+              user ? (
+                <div className="flex items-center space-x-3">
+                  <span className="hidden sm:inline text-sm text-gray-700">{(user.firstName || user.lastName) ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : 'Аккаунт'}</span>
+                  <button onClick={logout} className="px-3 py-2 rounded-full text-sm bg-gray-100 hover:bg-gray-200">Выйти</button>
+                </div>
+              ) : (
+                <button onClick={openAuth} className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 hover:bg-gray-200">Войти</button>
+              )
+            )}
+          
           {/* Enhanced Cart Button */}
           <button 
             onClick={openCart}
@@ -248,6 +263,7 @@ const NavigationMenu: React.FC = () => {
               <span className="absolute inset-0 bg-red-300 rounded-full animate-ping opacity-20"></span>
             )}
           </button>
+          </div>
         </div>
 
         {/* Индикатор прогресса скролла */}

@@ -7,20 +7,25 @@ import ProductCatalog from './components/ProductCatalog'
 import Footer from './components/Footer'
 import CartModal from './components/CartModal'
 import { CartProvider } from './context/CartContext'
+import { AuthProvider } from './context/AuthContext'
+import AuthModal from './components/AuthModal'
 
 const App: React.FC = () => {
   return (
-    <CartProvider>
-      <div className="min-h-screen bg-white">
-        <Header />
-        <NavigationMenu />
-        <PromoBanners />
-        <PopularItems />
-        <ProductCatalog />
-        <Footer />
-        <CartModal />
-      </div>
-    </CartProvider>
+    <AuthProvider>
+      <CartProvider>
+        <div className="min-h-screen bg-white">
+          <Header />
+          <NavigationMenu />
+          <PromoBanners />
+          <PopularItems />
+          <ProductCatalog />
+          <Footer />
+          <CartModal />
+          <AuthModal />
+        </div>
+      </CartProvider>
+    </AuthProvider>
   )
 }
 

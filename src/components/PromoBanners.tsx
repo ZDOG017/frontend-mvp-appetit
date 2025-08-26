@@ -5,36 +5,41 @@ import slider3 from '../assets/3_slider.png';
 
 const PromoBanners: React.FC = () => {
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* First Banner */}
-        <div className="rounded-3xl overflow-hidden min-h-[400px]">
-          <img 
-            src={slider1} 
-            alt="Slider 1" 
-            className="w-full h-full object-cover"
-          />
-        </div>
+    <section className="py-12">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Banner 1 */}
+          <div className="rounded-3xl overflow-hidden min-h-[400px]">
+            <img 
+              src={slider1} 
+              alt="Промо баннер 1" 
+              className="w-full h-full object-cover" 
+              loading="lazy" 
+            />
+          </div>
 
-        {/* Second Banner */}
-        <div className="rounded-3xl overflow-hidden min-h-[400px]">
-          <img 
-            src={slider2} 
-            alt="Slider 2" 
-            className="w-full h-full object-cover"
-          />
-        </div>
+          {/* Banner 2 */}
+          <div className="rounded-3xl overflow-hidden min-h-[400px]">
+            <img 
+              src={slider2} 
+              alt="Промо баннер 2" 
+              className="w-full h-full object-cover" 
+              loading="lazy" 
+            />
+          </div>
 
-        {/* Third Banner */}
-        <div className="rounded-3xl overflow-hidden min-h-[400px]">
-          <img 
-            src={slider3} 
-            alt="Slider 3" 
-            className="w-full h-full object-cover"
-          />
+          {/* Banner 3 */}
+          <div className="rounded-3xl overflow-hidden min-h-[400px]">
+            <img 
+              src={slider3} 
+              alt="Промо баннер 3" 
+              className="w-full h-full object-cover" 
+              loading="lazy" 
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 
