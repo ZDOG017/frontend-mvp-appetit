@@ -8,6 +8,7 @@ export type AuthUser = {
   firstName?: string;
   lastName?: string;
   email?: string;
+  isAdmin?: boolean;
 };
 
 export type RegisterPayload = {
@@ -71,6 +72,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const openAuth = useCallback(() => setIsAuthOpen(true), []);
   const closeAuth = useCallback(() => setIsAuthOpen(false), []);
 
+  const loadProfile = useCallback(async (overrideToken?: string) => {
+    const t = overrideToken ?? token;
+    if (!t) return;
+    try {
+      const res = await fetch(`${API_BASE}/users/me`, {
+        method: 'GET',
+        headers: { 'accept': 'application/json', 'Authorization': `Bearer ${t}` }
+      });
+      if (!res.ok) throw new Error('Не удалось получить профиль');
+      const me: { id: number; email: string; first_name: string; last_name: string; is_admin?: boolean } = await res.json();
+      setUser({
+        id: String(me.id),
+        username: me.email,
+        email: me.email,
+        firstName: me.first_name,
+        lastName: me.last_name,
+        isAdmin: me.is_admin,
+      });
+    } catch {
+      // keep minimal handling; don't drop session on transient failures
+    }
+  }, [token]);
+
   const login = useCallback(async ({ email, password }: LoginPayload) => {
     if (!email || !password) throw new Error('Введите email и пароль');
     const res = await fetch(`${API_BASE}/users/authorize`, {
@@ -93,11 +117,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     const data: { access_token: string } = await res.json();
     setToken(data.access_token);
-    // API не возвращает профиль, сохраняем базу из email
-    setUser({ id: 'self', username: email, email });
+    await loadProfile(data.access_token);
     setIsAuthOpen(false);
     showToast({ title: 'Вы вошли в аккаунт', description: 'Добро пожаловать!', type: 'success' });
-  }, [showToast]);
+  }, [showToast, loadProfile]);
 
   const register = useCallback(async ({ firstName, lastName, email, password, password2 }: RegisterPayload) => {
     if (!firstName || !lastName || !email || !password || !password2) {
@@ -133,6 +156,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
     showToast({ title: 'Вы вышли из аккаунта', type: 'info' });
   }, [showToast]);
+
+  // Try to fetch profile when token becomes available (e.g., after reload)
+  useEffect(() => {
+    if (token && !user) {
+      loadProfile();
+    }
+  }, [token, user, loadProfile]);
 
   const value = useMemo(() => ({ user, token, isAuthOpen, openAuth, closeAuth, login, register, logout }), [user, token, isAuthOpen, openAuth, closeAuth, login, register, logout]);
 

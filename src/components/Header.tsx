@@ -1,12 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
 import languageIcon from '../assets/icon_language.png';
+import ProfilePushdown from './ProfilePushdown';
+import { useToast } from '../context/ToastContext';
 
 const Header: React.FC = () => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [navSticky, setNavSticky] = useState<boolean>(false);
   const { user, openAuth, logout } = useAuth();
+  const { showToast } = useToast();
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+
+  const userInitials = useMemo(() => {
+    if (!user) return 'A';
+    const full = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.username || 'A';
+    return full.trim().split(/\s+/).map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  }, [user]);
+
+  // Open the profile pushdown right after successful login
+  useEffect(() => {
+    if (user) {
+      setIsProfileOpen(true);
+    }
+  }, [user]);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -53,6 +70,15 @@ const Header: React.FC = () => {
               <button className="text-xs text-gray-500 hover:text-gray-700 transition-colors">
                 Поддержка
               </button>
+              {/* admin check temporarily disabled */}
+              {/* {user?.isAdmin && ( */}
+              <button
+                onClick={() => showToast({ title: 'Админ панель', description: 'Скоро здесь будет переход в админку', type: 'info' })}
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                Админ панель
+              </button>
+              {/* )} */}
             </div>
           </div>
         </div>
@@ -61,7 +87,7 @@ const Header: React.FC = () => {
       {/* Main Header Content - Premium layout */}
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         {/* Navigation Section */}
-        <div className="flex items-center justify-end py-5">
+        <div className="flex items-center justify-end py-5 relative">
           <nav className="hidden md:flex items-center space-x-8">
             <a 
               href="#contacts" 
@@ -97,15 +123,33 @@ const Header: React.FC = () => {
             </a>
             {!navSticky && (
               user ? (
-                <div className="flex items-center space-x-3">
-                  <span className="hidden sm:inline text-sm text-gray-800">{(user.firstName || user.lastName) ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : 'Аккаунт'}</span>
-                  <button 
-                    onClick={logout}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-900 px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-200"
+                <div className="relative">
+                  <button
+                    onClick={() => setIsProfileOpen((v) => !v)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-red-50 transition"
+                    aria-label="Открыть профиль"
                     tabIndex={0}
                   >
-                    Выйти
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-rose-500 text-white flex items-center justify-center text-xs font-semibold">{userInitials}</div>
+                    <span className="hidden sm:inline text-sm font-medium text-gray-800">
+                      {(user.firstName || user.lastName) ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : (user.email || 'Аккаунт')}
+                    </span>
+                    <svg className={`w-4 h-4 text-gray-500 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
                   </button>
+
+                  <ProfilePushdown
+                    user={user}
+                    isOpen={isProfileOpen}
+                    onClose={() => setIsProfileOpen(false)}
+                    actions={[
+                      { key: 'profile', label: 'Профиль', onClick: () => { setIsProfileOpen(false); showToast({ title: 'Профиль', description: 'Скоро здесь будет страница профиля', type: 'info' }); } },
+                      { key: 'orders', label: 'Мои заказы', onClick: () => { setIsProfileOpen(false); showToast({ title: 'Заказы', description: 'Скоро здесь будет история заказов', type: 'info' }); } },
+                      { key: 'addresses', label: 'Адреса доставки', onClick: () => { setIsProfileOpen(false); showToast({ title: 'Адреса', description: 'Сохраненные адреса доставки', type: 'info' }); } },
+                      { key: 'payments', label: 'Способы оплаты', onClick: () => { setIsProfileOpen(false); showToast({ title: 'Оплата', description: 'Привяжите карту для быстрой оплаты', type: 'info' }); } },
+                      { key: 'support', label: 'Поддержка', onClick: () => { setIsProfileOpen(false); showToast({ title: 'Поддержка', description: 'Мы всегда рядом, чтобы помочь', type: 'success' }); } },
+                      { key: 'logout', label: 'Выйти', onClick: () => { setIsProfileOpen(false); logout(); } },
+                    ]}
+                  />
                 </div>
               ) : (
                 <button 
