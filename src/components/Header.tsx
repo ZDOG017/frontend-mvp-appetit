@@ -4,6 +4,7 @@ import logo from '../assets/logo.png';
 import languageIcon from '../assets/icon_language.png';
 import ProfilePushdown from './ProfilePushdown';
 import { useToast } from '../context/ToastContext';
+import { useNavigate } from 'react-router-dom';
 
 const Header: React.FC = () => {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -11,6 +12,7 @@ const Header: React.FC = () => {
   const { user, openAuth, logout } = useAuth();
   const { showToast } = useToast();
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+  const navigate = useNavigate();
 
   const userInitials = useMemo(() => {
     if (!user) return 'A';
@@ -70,15 +72,12 @@ const Header: React.FC = () => {
               <button className="text-xs text-gray-500 hover:text-gray-700 transition-colors">
                 Поддержка
               </button>
-              {/* admin check temporarily disabled */}
-              {/* {user?.isAdmin && ( */}
               <button
-                onClick={() => showToast({ title: 'Админ панель', description: 'Скоро здесь будет переход в админку', type: 'info' })}
+                onClick={() => { navigate('/admin'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
               >
                 Админ панель
               </button>
-              {/* )} */}
             </div>
           </div>
         </div>

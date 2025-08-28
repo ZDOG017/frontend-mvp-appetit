@@ -1,15 +1,14 @@
 import React from 'react'
 import Header from './components/Header'
-import NavigationMenu from './components/NavigationMenu'
-import PromoBanners from './components/PromoBanners'
-import PopularItems from './components/PopularItems'
-import ProductCatalog from './components/ProductCatalog'
 import Footer from './components/Footer'
 import CartModal from './components/CartModal'
 import { CartProvider } from './context/CartContext'
 import { AuthProvider } from './context/AuthContext'
 import AuthModal from './components/AuthModal'
 import { ToastProvider } from './context/ToastContext'
+import AdminPanel from './components/AdminPanel'
+import Home from './components/Home'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 const App: React.FC = () => {
   return (
@@ -17,14 +16,16 @@ const App: React.FC = () => {
       <AuthProvider>
         <CartProvider>
           <div className="min-h-screen bg-white">
-            <Header />
-            <NavigationMenu />
-            <PromoBanners />
-            <PopularItems />
-            <ProductCatalog />
-            <Footer />
-            <CartModal />
-            <AuthModal />
+            <BrowserRouter>
+              <Header />
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/admin" element={<AdminPanel />} />
+              </Routes>
+              <Footer />
+              <CartModal />
+              <AuthModal />
+            </BrowserRouter>
           </div>
         </CartProvider>
       </AuthProvider>

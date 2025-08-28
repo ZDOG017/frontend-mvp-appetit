@@ -27,6 +27,7 @@ export type LoginPayload = {
 export type AuthContextType = {
   user: AuthUser | null;
   token: string | null;
+  isLoading: boolean;
   isAuthOpen: boolean;
   openAuth: () => void;
   closeAuth: () => void;
@@ -39,12 +40,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = 'appetit_auth_user_v1';
 const TOKEN_STORAGE_KEY = 'appetit_access_token_v1';
-const API_BASE = 'http://127.0.0.1:8080/api/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -55,6 +57,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (t) setToken(t);
     } catch {
       /* ignore storage errors */
+    } finally {
+      setIsLoading(false);
     }
   }, [showToast]);
 
@@ -164,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [token, user, loadProfile]);
 
-  const value = useMemo(() => ({ user, token, isAuthOpen, openAuth, closeAuth, login, register, logout }), [user, token, isAuthOpen, openAuth, closeAuth, login, register, logout]);
+  const value = useMemo(() => ({ user, token, isLoading, isAuthOpen, openAuth, closeAuth, login, register, logout }), [user, token, isLoading, isAuthOpen, openAuth, closeAuth, login, register, logout]);
 
   return (
     <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
