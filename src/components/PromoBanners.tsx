@@ -1,7 +1,7 @@
 import React from 'react';
-import slider1 from '../assets/1_slider.png';
-import slider2 from '../assets/2_slider.png';
-import slider3 from '../assets/3_slider.png';
+import slider1 from '../assets/1_slider.svg';
+import slider2 from '../assets/2_slider.svg';
+import slider3 from '../assets/3_slider.svg';
 
 const PromoBanners: React.FC = () => {
   return (
