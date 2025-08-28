@@ -28,7 +28,7 @@ const Header: React.FC = () => {
         <div className="py-3 border-b border-gray-50">
           <div className="flex items-center justify-between">
             <button 
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-700 hover:text-red-500 hover:bg-red-50 transition-all duration-200 group"
+              className="flex items-center space-x-2 px-3 rounded-lg text-gray-700 hover:text-red-500 hover:bg-red-50 transition-all duration-200 group"
               aria-label="Выбрать язык"
               tabIndex={0}
             >
