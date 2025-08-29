@@ -1,7 +1,11 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useCart } from '../context/CartContext';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 
 const CartModal: React.FC = () => {
+  const [isProcessing, setIsProcessing] = useState(false);
   const { 
     items, 
     totalItems, 
@@ -10,8 +14,11 @@ const CartModal: React.FC = () => {
     closeCart, 
     updateQuantity, 
     removeItem,
-    clearCart 
+    clearCart,
+    placeOrder
   } = useCart();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
 
   // Блокируем скролл страницы когда модалка открыта
   useEffect(() => {
@@ -237,10 +244,39 @@ const CartModal: React.FC = () => {
               </div>
             </div>
 
-            <button className="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-4 rounded-xl transition-colors shadow-lg hover:shadow-xl">
+            <button 
+              onClick={() => {
+                setIsProcessing(true);
+                placeOrder();
+                showToast({
+                  title: 'Заказ оформлен!',
+                  description: `Ваш заказ на сумму ${finalTotal} ₸ успешно оформлен. Перенаправляем на страницу отслеживания...`,
+                  type: 'success'
+                });
+                setTimeout(() => {
+                  navigate('/order-tracking');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 1500);
+              }}
+              disabled={items.length === 0 || isProcessing}
+              className={`w-full font-medium py-4 rounded-xl transition-colors shadow-lg ${
+                items.length === 0 || isProcessing
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-red-500 hover:bg-red-600 text-white hover:shadow-xl'
+              }`}
+            >
               <div className="flex items-center justify-center space-x-2">
-                <span>Оформить заказ</span>
-                <span className="bg-red-400 px-2 py-1 rounded-lg text-sm">{finalTotal} ₸</span>
+                {isProcessing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Оформляем заказ...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Оформить заказ</span>
+                    <span className="bg-red-400 px-2 py-1 rounded-lg text-sm">{finalTotal} ₸</span>
+                  </>
+                )}
               </div>
             </button>
 

@@ -21,6 +21,7 @@ interface CartContextType {
   clearCart: () => void;
   openCart: () => void;
   closeCart: () => void;
+  placeOrder: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -102,6 +103,25 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsOpen(false);
   };
 
+  const placeOrder = () => {
+    // Сохраняем данные заказа для передачи на страницу отслеживания
+    const orderData = {
+      id: `ORD-${Date.now()}`,
+      items: items,
+      totalAmount: totalPrice,
+      createdAt: new Date().toISOString(),
+      estimatedDeliveryTime: new Date(Date.now() + 45 * 60 * 1000).toISOString(), // 45 минут
+      status: 'accepted'
+    };
+    
+    localStorage.setItem('appetit-current-order', JSON.stringify(orderData));
+    
+    // Здесь можно добавить логику для отправки заказа на сервер
+    // Пока что просто очищаем корзину и закрываем её
+    clearCart();
+    closeCart();
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -115,6 +135,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearCart,
         openCart,
         closeCart,
+        placeOrder,
       }}
     >
       {children}

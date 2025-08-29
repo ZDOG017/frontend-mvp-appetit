@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Clock, 
   ChefHat, 
@@ -12,7 +13,8 @@ import {
   Shield,
   Gift,
   Timer,
-  TrendingUp
+  TrendingUp,
+  ArrowLeft
 } from 'lucide-react';
 import OrderTrackingDemo from './OrderTrackingDemo';
 
@@ -65,8 +67,9 @@ interface CourierInfo {
 }
 
 const OrderTracking: React.FC = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  const [orderDetails] = useState<OrderDetails>({
+  const [orderDetails, setOrderDetails] = useState<OrderDetails>({
     id: "ORD-2025-001",
     customerName: "Ерасыл Сансызбай",
     phone: "+7 (777) 123-45-67",
@@ -166,6 +169,33 @@ const OrderTracking: React.FC = () => {
   const [showCourierMap, setShowCourierMap] = useState(false);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
+  // Загружаем данные заказа из localStorage при инициализации
+  useEffect(() => {
+    const savedOrder = localStorage.getItem('appetit-current-order');
+    if (savedOrder) {
+      try {
+        const orderData = JSON.parse(savedOrder);
+        // Обновляем orderDetails с данными из корзины
+        setOrderDetails(prev => ({
+          ...prev,
+          id: orderData.id,
+          items: orderData.items.map((item: { id: string; name: string; quantity: number; price: number; description?: string }) => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            modifiers: item.description ? [item.description] : undefined
+          })),
+          totalAmount: orderData.totalAmount,
+          createdAt: orderData.createdAt,
+          estimatedDeliveryTime: orderData.estimatedDeliveryTime
+        }));
+      } catch (error) {
+        console.error('Error loading order from localStorage:', error);
+      }
+    }
+  }, []);
+
   // Simulate order progress
   useEffect(() => {
     if (!isAutoPlaying) return;
@@ -264,8 +294,17 @@ const OrderTracking: React.FC = () => {
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-2"
+          className="text-center space-y-2 relative"
         >
+          <button
+            onClick={() => navigate('/menu')}
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 flex items-center space-x-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-lg border border-gray-200 transition-colors shadow-sm"
+            aria-label="Вернуться к меню"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-sm font-medium">Меню</span>
+          </button>
+          
           <h1 className="text-3xl font-bold text-gray-900">Отслеживание заказа</h1>
           <p className="text-gray-600">Заказ #{orderDetails.id}</p>
         </motion.div>
