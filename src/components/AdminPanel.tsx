@@ -526,6 +526,29 @@ const AdminPanel: React.FC = () => {
     }
   }, [token, disabled, typeForm.name, showToast]);
 
+  // Type deletion
+  const handleDeleteType = useCallback(async (typeId: number) => {
+    if (!confirm('Удалить этот тип блюда? Это действие нельзя отменить.')) return;
+    
+    try {
+      const res = await fetch(`${API_BASE}/food/type/${typeId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail?.[0]?.msg || 'Не удалось удалить тип');
+      }
+
+      setFoodTypes(prev => prev.filter(type => type.id !== typeId));
+      showToast({ title: 'Тип удален', type: 'success' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Ошибка';
+      showToast({ title: 'Ошибка', description: msg, type: 'error' });
+    }
+  }, [token, showToast]);
+
   // Modifier category creation
   const handleCreateModifierCategory = useCallback(async () => {
     if (disabled || !modifierCategoryForm.name.trim()) {
@@ -550,7 +573,16 @@ const AdminPanel: React.FC = () => {
       }
 
       const result = await res.json();
-      setModifierCategories(prev => [...prev, { id: Date.now(), name: result }]);
+      console.log('AdminPanel: Created modifier category result:', result);
+      
+      // API возвращает объект с id и name
+      const newCategory = {
+        id: result.id,
+        name: result.name
+      };
+      console.log('AdminPanel: Adding new category to state:', newCategory);
+      
+      setModifierCategories(prev => [...prev, newCategory]);
       setModifierCategoryForm({ name: '' });
       showToast({ title: 'Категория модификаторов создана', type: 'success' });
     } catch (e: unknown) {
@@ -558,6 +590,41 @@ const AdminPanel: React.FC = () => {
       showToast({ title: 'Ошибка', description: msg, type: 'error' });
     }
   }, [token, disabled, modifierCategoryForm.name, showToast]);
+
+  // Modifier category deletion
+  const handleDeleteModifierCategory = useCallback(async (categoryId: number) => {
+    if (!confirm('Удалить эту категорию модификаторов? Это действие нельзя отменить.')) return;
+    
+    console.log('AdminPanel: Deleting modifier category:', categoryId);
+    console.log('AdminPanel: Current modifierCategories:', modifierCategories);
+    
+    try {
+      const res = await fetch(`${API_BASE}/food/modifiers/${categoryId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      console.log('AdminPanel: Delete response status:', res.status, res.ok);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('AdminPanel: Delete error response:', errorData);
+        throw new Error(errorData.detail?.[0]?.msg || `HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      console.log('AdminPanel: Category deleted successfully, updating state...');
+      setModifierCategories(prev => {
+        const filtered = prev.filter(cat => cat.id !== categoryId);
+        console.log('AdminPanel: Updated modifierCategories:', filtered);
+        return filtered;
+      });
+      showToast({ title: 'Категория удалена', type: 'success' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Ошибка';
+      console.error('AdminPanel: Error deleting modifier category:', e);
+      showToast({ title: 'Ошибка', description: msg, type: 'error' });
+    }
+  }, [token, showToast, modifierCategories]);
 
   // Modifier option creation
   const handleCreateModifierOption = useCallback(async () => {
@@ -587,12 +654,18 @@ const AdminPanel: React.FC = () => {
       }
 
       const result = await res.json();
-      setModifierOptions(prev => [...prev, {
-        id: Date.now(),
-        name: result,
+      console.log('AdminPanel: Created modifier option result:', result);
+      
+      // API возвращает объект с id и name
+      const newOption = {
+        id: result.id,
+        name: result.name,
         price: Number(modifierOptionForm.price),
         modifier_category_id: Number(modifierOptionForm.category_id)
-      }]);
+      };
+      console.log('AdminPanel: Adding new option to state:', newOption);
+      
+      setModifierOptions(prev => [...prev, newOption]);
       
       setModifierOptionForm({ name: '', category_id: '', price: 0 });
       showToast({ title: 'Опция модификатора создана', type: 'success' });
@@ -601,6 +674,41 @@ const AdminPanel: React.FC = () => {
       showToast({ title: 'Ошибка', description: msg, type: 'error' });
     }
   }, [token, disabled, modifierOptionForm, showToast]);
+
+  // Modifier option deletion
+  const handleDeleteModifierOption = useCallback(async (optionId: number) => {
+    if (!confirm('Удалить эту опцию модификатора? Это действие нельзя отменить.')) return;
+    
+    console.log('AdminPanel: Deleting modifier option:', optionId);
+    console.log('AdminPanel: Current modifierOptions:', modifierOptions);
+    
+    try {
+      const res = await fetch(`${API_BASE}/food/modifiers/${optionId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      console.log('AdminPanel: Delete option response status:', res.status, res.ok);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('AdminPanel: Delete option error response:', errorData);
+        throw new Error(errorData.detail?.[0]?.msg || `HTTP ${res.status}: ${res.statusText}`);
+      }
+
+      console.log('AdminPanel: Option deleted successfully, updating state...');
+      setModifierOptions(prev => {
+        const filtered = prev.filter(option => option.id !== optionId);
+        console.log('AdminPanel: Updated modifierOptions:', filtered);
+        return filtered;
+      });
+      showToast({ title: 'Опция удалена', type: 'success' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Ошибка';
+      console.error('AdminPanel: Error deleting modifier option:', e);
+      showToast({ title: 'Ошибка', description: msg, type: 'error' });
+    }
+  }, [token, showToast, modifierOptions]);
 
   // Add to menu
   const handleAddToMenu = useCallback(async () => {
@@ -1103,8 +1211,17 @@ const AdminPanel: React.FC = () => {
               <div className="space-y-3">
                 {(foodTypes || []).map(type => (
                   <div key={type.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <span className="font-medium text-gray-900">{type.name}</span>
-                    <span className="text-sm text-gray-500">ID: {type.id}</span>
+                    <div>
+                      <span className="font-medium text-gray-900">{type.name}</span>
+                      <span className="text-sm text-gray-500 ml-2">ID: {type.id}</span>
+                    </div>
+                    <Button
+                      onClick={() => handleDeleteType(type.id)}
+                      variant="danger"
+                      size="sm"
+                    >
+                      🗑️ Удалить
+                    </Button>
                   </div>
                 ))}
                 {(!foodTypes || foodTypes.length === 0) && (
@@ -1169,14 +1286,33 @@ const AdminPanel: React.FC = () => {
                 <div className="space-y-3">
                   {(modifierCategories || []).map(category => (
                     <div key={category.id} className="p-3 bg-gray-50 rounded-lg">
-                      <h4 className="font-medium text-gray-900 mb-2">{category.name}</h4>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-gray-900">{category.name}</h4>
+                        <Button
+                          onClick={() => handleDeleteModifierCategory(category.id)}
+                          variant="danger"
+                          size="sm"
+                        >
+                          🗑️ Удалить
+                        </Button>
+                      </div>
                       <div className="space-y-1">
                         {(modifierOptions || [])
                           .filter(option => option.modifier_category_id === category.id)
                           .map(option => (
                             <div key={option.id} className="flex items-center justify-between text-sm">
                               <span className="text-gray-600">{option.name}</span>
-                              <span className="text-gray-500">+{option.price}₸</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-500">+{option.price}₸</span>
+                                <Button
+                                  onClick={() => handleDeleteModifierOption(option.id)}
+                                  variant="danger"
+                                  size="sm"
+                                  className="text-xs px-2 py-1"
+                                >
+                                  🗑️
+                                </Button>
+                              </div>
                             </div>
                           ))}
                       </div>
