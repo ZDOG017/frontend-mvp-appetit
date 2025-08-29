@@ -8,6 +8,7 @@ import AuthModal from './components/AuthModal'
 import { ToastProvider } from './context/ToastContext'
 import AdminPanel from './components/AdminPanel'
 import Home from './components/Home'
+import ProductMenu from './components/ProductMenu'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 const App: React.FC = () => {
@@ -21,6 +22,7 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/admin" element={<AdminPanel />} />
+                <Route path="/menu" element={<ProductMenu />} />
               </Routes>
               <Footer />
               <CartModal />

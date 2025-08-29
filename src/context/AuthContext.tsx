@@ -40,7 +40,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOCAL_STORAGE_KEY = 'appetit_auth_user_v1';
 const TOKEN_STORAGE_KEY = 'appetit_access_token_v1';
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://robocraft.site/api/v1';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);

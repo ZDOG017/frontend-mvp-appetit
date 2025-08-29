@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://robocraft.site/api/v1';
 
 type FoodSize = { name: string; is_new: boolean; price: number };
 type FoodType = { id: number; name: string };
@@ -110,6 +110,11 @@ const AdminPanel: React.FC = () => {
   const [selectedFoodForMenu, setSelectedFoodForMenu] = useState('');
   const [priorityLevel, setPriorityLevel] = useState('1');
 
+  // Image upload
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImages, setUploadingImages] = useState<Record<number, boolean>>({});
+  const [foodImages, setFoodImages] = useState<Record<number, string>>({});
+
   const disabled = useMemo(() => !token, [token]);
 
   // Load initial data
@@ -163,6 +168,24 @@ const AdminPanel: React.FC = () => {
     return headers;
   }, [token]);
 
+  // Load existing image for a food item
+  const loadFoodImage = useCallback(async (foodId: number) => {
+    if (!token) return;
+    
+    try {
+      const res = await fetch(`${API_BASE}/food/${foodId}/image`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        const imageData = await res.json();
+        setFoodImages(prev => ({ ...prev, [foodId]: imageData }));
+      }
+    } catch {
+      // Image not found or error loading, keep default state
+    }
+  }, [token]);
+
   const handleCreateFood = useCallback(async () => {
     if (disabled || !foodName || !foodTypeId || !sizes.some(s => s.name && s.price > 0)) {
       showToast({ title: 'Заполните все поля', description: 'Название, тип и хотя бы один размер с ценой обязательны', type: 'error' });
@@ -192,11 +215,16 @@ const AdminPanel: React.FC = () => {
       setCreatedFoods(prev => [...prev, newFood]);
       showToast({ title: 'Блюдо создано', description: 'Теперь добавьте его в меню', type: 'success' });
       setFoodName(''); setFoodDesc(''); setFoodTypeId(''); setSizes([{ name: '', is_new: false, price: 0 }]);
+      
+      // Load image for the newly created food
+      if (newFood.id) {
+        loadFoodImage(newFood.id);
+      }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Ошибка';
       showToast({ title: 'Ошибка', description: msg, type: 'error' });
     }
-  }, [jsonHeaders, disabled, foodDesc, foodName, foodTypeId, sizes, showToast, foodTypes]);
+  }, [jsonHeaders, disabled, foodDesc, foodName, foodTypeId, sizes, showToast, foodTypes, loadFoodImage]);
 
   const handleCreateType = useCallback(async () => {
     if (disabled) return;
@@ -266,6 +294,61 @@ const AdminPanel: React.FC = () => {
       showToast({ title: 'Ошибка', description: msg, type: 'error' });
     }
   }, [jsonHeaders, disabled, selectedFoodForMenu, priorityLevel, showToast]);
+
+  // Load images for existing foods
+  useEffect(() => {
+    if (!token || createdFoods.length === 0) return;
+    
+    createdFoods.forEach(food => {
+      if (food.id && !foodImages[food.id]) {
+        loadFoodImage(food.id);
+      }
+    });
+  }, [token, createdFoods, foodImages, loadFoodImage]);
+
+  const handleImageUpload = useCallback(async (foodId: number) => {
+    if (!selectedImage || disabled) return;
+    
+    setUploadingImages(prev => ({ ...prev, [foodId]: true }));
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedImage);
+      
+      const res = await fetch(`${API_BASE}/food/${foodId}/upload-image`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.detail?.[0]?.msg || 'Не удалось загрузить изображение');
+      }
+      
+      showToast({ title: 'Изображение загружено', type: 'success' });
+      setSelectedImage(null);
+      
+      // Update the food images state to show the new image
+      setFoodImages(prev => ({ ...prev, [foodId]: URL.createObjectURL(selectedImage) }));
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Ошибка';
+      showToast({ title: 'Ошибка загрузки', description: msg, type: 'error' });
+    } finally {
+      setUploadingImages(prev => ({ ...prev, [foodId]: false }));
+    }
+  }, [selectedImage, disabled, token, showToast]);
+
+  // Remove image for a food item
+  const handleRemoveImage = useCallback((foodId: number) => {
+    setFoodImages(prev => {
+      const newImages = { ...prev };
+      delete newImages[foodId];
+      return newImages;
+    });
+    showToast({ title: 'Изображение удалено', type: 'info' });
+  }, [showToast]);
+
+
 
   if (isLoading) {
     return (
@@ -370,7 +453,7 @@ const AdminPanel: React.FC = () => {
             </div>
 
             {createdFoods.length > 0 && (
-              <SectionCard title="Управление меню" subtitle="Добавьте созданные блюда в меню">
+              <SectionCard title="Управление меню" subtitle="Добавьте созданные блюда в меню и загружайте изображения для отображения в каталоге">
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                     <SelectField 
@@ -386,6 +469,10 @@ const AdminPanel: React.FC = () => {
                   
                   <div className="mt-4">
                     <p className="text-sm font-medium text-gray-900 mb-2">Созданные блюда:</p>
+                    <p className="text-xs text-gray-500 mb-3">
+                      Здесь вы можете загружать изображения для каждого блюда. 
+                      Поддерживаются форматы: JPG, PNG, GIF. Максимальный размер: 5MB.
+                    </p>
                     <div className="space-y-2">
                       {createdFoods.map(food => (
                         <div key={food.id} className={`flex items-center justify-between p-3 rounded-lg border ${food.added_to_menu ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
@@ -393,9 +480,81 @@ const AdminPanel: React.FC = () => {
                             <span className="font-medium">{food.name}</span>
                             <span className="text-sm text-gray-500 ml-2">({food.type_name})</span>
                           </div>
-                          <span className={`text-xs px-2 py-1 rounded-full ${food.added_to_menu ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                            {food.added_to_menu ? 'В меню' : 'Не добавлено'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs px-2 py-1 rounded-full ${food.added_to_menu ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                              {food.added_to_menu ? 'В меню' : 'Не добавлено'}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                                          <button
+                              onClick={() => document.getElementById(`image-upload-${food.id}`)?.click()}
+                              disabled={uploadingImages[food.id]}
+                              className={`text-xs px-2 py-1 rounded border ${
+                                uploadingImages[food.id]
+                                  ? 'text-gray-400 border-gray-200 cursor-not-allowed' 
+                                  : 'text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-300'
+                              }`}
+                            >
+                              {uploadingImages[food.id] ? '⏳ Загрузка...' : '📷 Загрузить фото'}
+                            </button>
+                              
+                              {/* Image preview */}
+                              {foodImages[food.id] ? (
+                                <div className="relative group">
+                                  <img 
+                                    src={foodImages[food.id]} 
+                                    alt={food.name}
+                                    className="w-8 h-8 rounded border object-cover"
+                                  />
+                                  <button
+                                    onClick={() => handleRemoveImage(food.id)}
+                                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-600"
+                                    title="Удалить изображение"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 bg-gray-100 rounded border flex items-center justify-center">
+                                  <span className="text-xs text-gray-500">IMG</span>
+                                </div>
+                              )}
+                              
+                              <input
+                                id={`image-upload-${food.id}`}
+                                type="file"
+                                accept="image/*"
+                                                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      // Validate file size (max 5MB)
+                                      if (file.size > 5 * 1024 * 1024) {
+                                        showToast({ 
+                                          title: 'Ошибка валидации', 
+                                          description: `Файл слишком большой: ${(file.size / (1024 * 1024)).toFixed(1)}MB. Максимум: 5MB`, 
+                                          type: 'error' 
+                                        });
+                                        return;
+                                      }
+                                      
+                                      // Validate file type
+                                      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                                      if (!allowedTypes.includes(file.type)) {
+                                        showToast({ 
+                                          title: 'Ошибка валидации', 
+                                          description: `Неподдерживаемый формат: ${file.type}. Используйте JPG, PNG или GIF`, 
+                                          type: 'error' 
+                                        });
+                                        return;
+                                      }
+                                      
+                                      setSelectedImage(file);
+                                      handleImageUpload(food.id);
+                                    }
+                                  }}
+                                className="hidden"
+                              />
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>

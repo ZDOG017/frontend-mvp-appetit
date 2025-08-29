@@ -120,6 +120,14 @@ const Header: React.FC = () => {
               Вакансии
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-200 group-hover:w-full"></span>
             </a>
+            <button
+              onClick={() => { navigate('/menu'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="text-gray-700 hover:text-red-500 transition-all duration-200 text-sm font-medium relative group"
+              tabIndex={0}
+            >
+              Меню
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-200 group-hover:w-full"></span>
+            </button>
             {!navSticky && (
               user ? (
                 <div className="relative">
