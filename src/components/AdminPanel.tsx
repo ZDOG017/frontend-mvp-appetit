@@ -44,6 +44,12 @@ type FoodProduct = {
   }>;
 };
 
+type MenuCategory = {
+  food_type_id: number;
+  food_type_name: string;
+  foods: FoodProduct[];
+};
+
 type MenuItem = {
   id: number;
   food_id: number;
@@ -321,11 +327,25 @@ const AdminPanel: React.FC = () => {
       console.log('AdminPanel: Menu response:', { status: menuRes.status, ok: menuRes.ok });
       
       if (menuRes.ok) {
-        const menu: MenuItem[] = await menuRes.json();
+        const menu: MenuCategory[] = await menuRes.json();
         console.log('AdminPanel: Menu loaded:', menu);
-        setMenuItems(menu);
-        // Extract unique foods from menu
-        const foods = menu.map(item => item.food);
+        console.log('AdminPanel: Menu item structure:', menu[0]); // Логируем структуру первого элемента
+        
+        // Создаем MenuItem из MenuCategory для совместимости
+        const menuItems: MenuItem[] = menu.flatMap(category => 
+          (category.foods || []).map(food => ({
+            id: food.id,
+            food_id: food.id,
+            priority_level: 1,
+            food: food
+          }))
+        );
+        
+        setMenuItems(menuItems);
+        
+        // Извлекаем блюда
+        const foods = menu.flatMap(category => category.foods || []);
+        
         console.log('AdminPanel: Extracted foods from menu:', foods);
         setCreatedFoods(foods);
       } else {
