@@ -237,7 +237,7 @@ const AdminPanel: React.FC = () => {
   });
 
   // Image management
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+
   const [uploadingImages, setUploadingImages] = useState<Record<number, boolean>>({});
   const [foodImages, setFoodImages] = useState<Record<number, string>>({});
 
@@ -348,6 +348,14 @@ const AdminPanel: React.FC = () => {
         
         console.log('AdminPanel: Extracted foods from menu:', foods);
         setCreatedFoods(foods);
+        
+        // Загружаем изображения для всех блюд
+        foods.forEach(food => {
+          if (food && food.id) {
+            console.log('AdminPanel: Loading image for food from menu:', food.id, food.name);
+            loadFoodImage(food.id);
+          }
+        });
       } else {
         console.error('AdminPanel: Failed to load menu:', menuRes.status, menuRes.statusText);
       }
@@ -386,16 +394,35 @@ const AdminPanel: React.FC = () => {
     if (!token) return;
     
     try {
+      console.log('AdminPanel: Fetching image for food ID:', foodId);
       const res = await fetch(`${API_BASE}/food/${foodId}/image`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
+      console.log('AdminPanel: Image response for food', foodId, ':', { status: res.status, ok: res.ok });
+      
       if (res.ok) {
         const imageData = await res.json();
-        setFoodImages(prev => ({ ...prev, [foodId]: imageData }));
+        console.log('AdminPanel: Image data received for food', foodId, ':', imageData);
+        console.log('AdminPanel: Image data type:', typeof imageData);
+        console.log('AdminPanel: Image data keys:', imageData ? Object.keys(imageData) : 'null');
+        
+        // API возвращает объект с ссылкой на изображение
+        if (imageData && imageData.image_url) {
+          console.log('AdminPanel: Using image_url:', imageData.image_url);
+          setFoodImages(prev => ({ ...prev, [foodId]: imageData.image_url }));
+        } else if (imageData && typeof imageData === 'string') {
+          // Если API возвращает прямую ссылку
+          console.log('AdminPanel: Using direct string URL:', imageData);
+          setFoodImages(prev => ({ ...prev, [foodId]: imageData }));
+        } else {
+          console.log('AdminPanel: Unexpected image data format for food', foodId, ':', imageData);
+        }
+      } else {
+        console.log('AdminPanel: No image found for food', foodId, 'status:', res.status);
       }
-    } catch {
-      // Image not found or error loading
+    } catch (error) {
+      console.error('AdminPanel: Error loading image for food', foodId, ':', error);
     }
   }, [token]);
 
@@ -622,13 +649,15 @@ const AdminPanel: React.FC = () => {
   }, [token, disabled, menuForm, createdFoods, showToast]);
 
   // Image upload
-  const handleImageUpload = useCallback(async (foodId: number) => {
-    if (!selectedImage || disabled) return;
+  const handleImageUpload = useCallback(async (foodId: number, file: File) => {
+    if (!file || disabled) return;
     
     setUploadingImages(prev => ({ ...prev, [foodId]: true }));
     try {
       const formData = new FormData();
-      formData.append('file', selectedImage);
+      formData.append('file', file);
+      
+      console.log('AdminPanel: Uploading image for food:', foodId, 'file:', file.name);
       
       const res = await fetch(`${API_BASE}/food/${foodId}/upload-image`, {
         method: 'POST',
@@ -636,23 +665,26 @@ const AdminPanel: React.FC = () => {
         body: formData
       });
       
+      console.log('AdminPanel: Upload response for food', foodId, ':', { status: res.status, ok: res.ok });
+      
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.detail?.[0]?.msg || 'Не удалось загрузить изображение');
+        throw new Error(errorData.detail?.[0]?.msg || `HTTP ${res.status}: ${res.statusText}`);
       }
       
       showToast({ title: 'Изображение загружено', type: 'success' });
-      setSelectedImage(null);
       
-      // Update the food images state
-      setFoodImages(prev => ({ ...prev, [foodId]: URL.createObjectURL(selectedImage) }));
+      // Reload the image after successful upload
+      await loadFoodImage(foodId);
+      
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Ошибка';
+      console.error('AdminPanel: Error uploading image for food', foodId, ':', e);
       showToast({ title: 'Ошибка загрузки', description: msg, type: 'error' });
     } finally {
       setUploadingImages(prev => ({ ...prev, [foodId]: false }));
     }
-  }, [selectedImage, disabled, token, showToast]);
+  }, [disabled, token, showToast, loadFoodImage]);
 
   // Form handlers
   const handleAddSize = useCallback(() => {
@@ -678,15 +710,19 @@ const AdminPanel: React.FC = () => {
     }));
   }, []);
 
-  // Load images for existing foods
+  // Load images for all foods (both created and from menu)
   useEffect(() => {
-    if (!token || createdFoods.length === 0) return;
+    if (!token) return;
     
-    createdFoods.forEach(food => {
-      if (food.id && !foodImages[food.id]) {
-        loadFoodImage(food.id);
-      }
-    });
+    // Загружаем изображения для всех блюд из меню
+    if (createdFoods && createdFoods.length > 0) {
+      createdFoods.forEach(food => {
+        if (food && food.id && !foodImages[food.id]) {
+          console.log('AdminPanel: Loading image for food:', food.id, food.name);
+          loadFoodImage(food.id);
+        }
+      });
+    }
   }, [token, createdFoods, foodImages, loadFoodImage]);
 
   if (isLoading) {
@@ -964,12 +1000,19 @@ const AdminPanel: React.FC = () => {
                     {createdFoods.map(food => (
                       <div key={food.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
                             {foodImages[food.id] ? (
                               <img 
                                 src={foodImages[food.id]} 
                                 alt={food.name || 'Блюдо'}
                                 className="w-full h-full object-cover rounded-lg"
+                                onError={(e) => {
+                                  console.error('AdminPanel: Image load error for food', food.id, 'URL:', foodImages[food.id], 'Error:', e);
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                                onLoad={() => {
+                                  console.log('AdminPanel: Image loaded successfully for food', food.id, 'URL:', foodImages[food.id]);
+                                }}
                               />
                             ) : (
                               <span className="text-gray-400 text-xs">IMG</span>
@@ -996,8 +1039,7 @@ const AdminPanel: React.FC = () => {
                                   });
                                   return;
                                 }
-                                setSelectedImage(file);
-                                handleImageUpload(food.id);
+                                handleImageUpload(food.id, file);
                               }
                             }}
                             className="hidden"
@@ -1011,6 +1053,25 @@ const AdminPanel: React.FC = () => {
                           >
                             {uploadingImages[food.id] ? '⏳' : '📷'}
                           </Button>
+                          
+                          {foodImages[food.id] && (
+                            <Button
+                              onClick={() => {
+                                if (confirm('Удалить изображение?')) {
+                                  // TODO: Добавить API для удаления изображения если поддерживается
+                                  showToast({ 
+                                    title: 'Функция удаления', 
+                                    description: 'Удаление изображений пока не поддерживается', 
+                                    type: 'info' 
+                                  });
+                                }
+                              }}
+                              variant="secondary"
+                              size="sm"
+                            >
+                              🗑️
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1164,17 +1225,58 @@ const AdminPanel: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {menuItems.map(item => (
                       <div key={item.id} className="border border-gray-200 rounded-lg p-4 bg-white">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">{item.food?.name || 'Без названия'}</h4>
-                          <span className="text-sm text-gray-500">Приоритет: {item.priority_level}</span>
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {foodImages[item.food_id] ? (
+                              <img 
+                                src={foodImages[item.food_id]} 
+                                alt={item.food?.name || 'Блюдо'}
+                                className="w-full h-full object-cover rounded-lg"
+                                onError={(e) => {
+                                  console.error('AdminPanel: Image load error for menu item', item.food_id, 'URL:', foodImages[item.food_id], 'Error:', e);
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                                onLoad={() => {
+                                  console.log('AdminPanel: Image loaded successfully for menu item', item.food_id, 'URL:', foodImages[item.food_id]);
+                                }}
+                              />
+                            ) : (
+                              <span className="text-gray-400 text-xs">IMG</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between mb-1">
+                              <h4 className="font-medium text-gray-900 truncate">{item.food?.name || 'Без названия'}</h4>
+                              <span className="text-sm text-gray-500 flex-shrink-0 ml-2">Приоритет: {item.priority_level}</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{item.food?.food_type_name || 'Без типа'}</p>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-600 mb-2">{item.food?.food_type_name || 'Без типа'}</p>
                         <div className="flex flex-wrap gap-1">
                           {(item.food?.food_sizes || []).map(size => (
                             <span key={size.id || Math.random()} className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-600">
                               {size.name} • {size.price}₸
                             </span>
                           ))}
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <Button
+                            onClick={() => {
+                              if (confirm('Удалить блюдо из меню?')) {
+                                // TODO: Добавить API для удаления из меню
+                                showToast({ 
+                                  title: 'Функция удаления', 
+                                  description: 'Удаление из меню пока не поддерживается', 
+                                  type: 'info' 
+                                });
+                              }
+                            }}
+                            variant="danger"
+                            size="sm"
+                            className="w-full"
+                          >
+                            🗑️ Убрать из меню
+                          </Button>
                         </div>
                       </div>
                     ))}
