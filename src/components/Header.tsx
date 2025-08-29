@@ -128,6 +128,14 @@ const Header: React.FC = () => {
               Меню
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-200 group-hover:w-full"></span>
             </button>
+            <button
+              onClick={() => { navigate('/order-tracking'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="text-gray-700 hover:text-red-500 transition-all duration-200 text-sm font-medium relative group"
+              tabIndex={0}
+            >
+              Отследить заказ
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-red-500 transition-all duration-200 group-hover:w-full"></span>
+            </button>
             {!navSticky && (
               user ? (
                 <div className="relative">
@@ -150,7 +158,7 @@ const Header: React.FC = () => {
                     onClose={() => setIsProfileOpen(false)}
                     actions={[
                       { key: 'profile', label: 'Профиль', onClick: () => { setIsProfileOpen(false); showToast({ title: 'Профиль', description: 'Скоро здесь будет страница профиля', type: 'info' }); } },
-                      { key: 'orders', label: 'Мои заказы', onClick: () => { setIsProfileOpen(false); showToast({ title: 'Заказы', description: 'Скоро здесь будет история заказов', type: 'info' }); } },
+                      { key: 'orders', label: 'Мои заказы', onClick: () => { setIsProfileOpen(false); navigate('/order-tracking'); } },
                       { key: 'addresses', label: 'Адреса доставки', onClick: () => { setIsProfileOpen(false); showToast({ title: 'Адреса', description: 'Сохраненные адреса доставки', type: 'info' }); } },
                       { key: 'payments', label: 'Способы оплаты', onClick: () => { setIsProfileOpen(false); showToast({ title: 'Оплата', description: 'Привяжите карту для быстрой оплаты', type: 'info' }); } },
                       { key: 'support', label: 'Поддержка', onClick: () => { setIsProfileOpen(false); showToast({ title: 'Поддержка', description: 'Мы всегда рядом, чтобы помочь', type: 'success' }); } },
