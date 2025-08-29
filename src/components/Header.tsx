@@ -9,6 +9,8 @@ import { useNavigate } from 'react-router-dom';
 const Header: React.FC = () => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [navSticky, setNavSticky] = useState<boolean>(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('Русский');
   const { user, openAuth, logout } = useAuth();
   const { showToast } = useToast();
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
@@ -46,23 +48,68 @@ const Header: React.FC = () => {
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-3 border-b border-gray-50">
           <div className="flex items-center justify-between">
-            <button 
-              className="flex items-center space-x-2 px-3 rounded-lg text-gray-700 hover:text-red-500 hover:bg-red-50 transition-all duration-200 group"
-              aria-label="Выбрать язык"
-              tabIndex={0}
-            >
-              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-red-100 transition-colors">
-                <img 
-                  src={languageIcon} 
-                  alt="Language" 
-                  className="w-3 h-3"
-                />
-              </div>
-              <span className="text-sm font-medium">Русский</span>
-              <svg className="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
+            <div className="relative">
+              <button 
+                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                onBlur={() => setTimeout(() => setShowLanguageDropdown(false), 150)}
+                className="flex items-center space-x-2 px-3 rounded-lg text-gray-700 hover:text-red-500 hover:bg-red-50 transition-all duration-200 group"
+                aria-label="Выбрать язык"
+                tabIndex={0}
+              >
+                <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-red-100 transition-colors">
+                  <img 
+                    src={languageIcon} 
+                    alt="Language" 
+                    className="w-3 h-3"
+                  />
+                </div>
+                <span className="text-sm font-medium">{selectedLanguage}</span>
+                <svg className={`w-4 h-4 transition-transform ${showLanguageDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {/* Language Dropdown */}
+              {showLanguageDropdown && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <div className="py-2">
+                    <button
+                      onClick={() => {
+                        setSelectedLanguage('Русский');
+                        setShowLanguageDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-red-50 transition-colors ${
+                        selectedLanguage === 'Русский' ? 'text-red-500 bg-red-50' : 'text-gray-700'
+                      }`}
+                    >
+                      Русский
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedLanguage('English');
+                        setShowLanguageDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-red-50 transition-colors ${
+                        selectedLanguage === 'English' ? 'text-red-500 bg-red-50' : 'text-gray-700'
+                      }`}
+                    >
+                      English
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedLanguage('Қазақша');
+                        setShowLanguageDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-red-50 transition-colors ${
+                        selectedLanguage === 'Қазақша' ? 'text-red-500 bg-red-50' : 'text-gray-700'
+                      }`}
+                    >
+                      Қазақша
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             
             {/* Quick Actions */}
             <div className="flex items-center space-x-4">
@@ -181,13 +228,18 @@ const Header: React.FC = () => {
 
         {/* Logo - Enhanced positioning with premium effects */}
         <div className="absolute left-6 top-1/2 transform -translate-y-1/2 z-20">
-          <div className="group">
+          <button 
+            onClick={() => { navigate('/'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            className="group cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-lg p-2 transition-all duration-200"
+            aria-label="Перейти на главную страницу"
+            tabIndex={0}
+          >
             <img 
               src={logo} 
               alt="APPETIT - Настоящий вкус мяса" 
               className="h-20 w-auto object-contain transition-all duration-300 group-hover:scale-105 drop-shadow-lg"
             />
-          </div>
+          </button>
         </div>
 
         {/* Bottom Section - Premium Delivery Info */}
